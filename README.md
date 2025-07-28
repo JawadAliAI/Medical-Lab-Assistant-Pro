@@ -28,7 +28,7 @@ This application serves as a virtual medical doctor specializing in laboratory m
 *The main interface showing the professional medical consultation dashboard with lab results overview*
 
 ### Image 2: Chat Interface
-![Chat Interface](image2.png)
+![Chat Interface](image.png)
 *Interactive chat interface where users can ask medical questions and receive professional analysis*
 
 ## 🚀 Quick Start
