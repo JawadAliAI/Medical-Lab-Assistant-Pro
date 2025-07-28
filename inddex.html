@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Lab Results Assistant - Professional Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chatbot-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 15px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e74c3c;
+            transition: all 0.3s ease;
+        }
+
+        .status-dot.ready {
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+
+        .status-text {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .api-config {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .api-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .api-input {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .api-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .api-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .api-input button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .api-input button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .connection-status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .connection-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .connection-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #fafbfc;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 18px 24px;
+            border-radius: 20px;
+            line-height: 1.6;
+            animation: slideIn 0.4s ease-out;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 8px;
+        }
+
+        .bot-message {
+            background: white;
+            color: #2c3e50;
+            align-self: flex-start;
+            border-bottom-left-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .bot-message strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: flex;
+            gap: 8px;
+            padding: 18px 24px;
+            background: white;
+            border-radius: 20px;
+            border-bottom-left-radius: 8px;
+            border-left: 4px solid #3498db;
+            align-self: flex-start;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-dot {
+            width: 10px;
+            height: 10px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s ease-in-out infinite both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        .loading-dot:nth-child(3) { animation-delay: 0s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .input-container {
+            padding: 25px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .quick-question {
+            background: linear-gradient(135deg, #e9ecef, #f8f9fa);
+            color: #495057;
+            padding: 10px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+        }
+
+        .quick-question:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-group textarea {
+            flex: 1;
+            padding: 16px 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            resize: none;
+            font-family: inherit;
+            font-size: 16px;
+            max-height: 120px;
+            min-height: 54px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-button {
+            width: 54px;
+            height: 54px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            background: linear-gradient(135deg, #ccc, #999);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .lab-summary {
+            background: #e8f4fd;
+            border: 1px solid #b8daff;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .lab-summary h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .reset-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.3s ease;
+        }
+
+        .reset-button:hover {
+            background: #5a6268;
+        }
+
+        @media (max-width: 600px) {
+            .chatbot-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+
+            .quick-questions {
+                flex-direction: column;
+            }
+
+            .quick-question {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="header">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span class="status-text" id="statusText">Disconnected</span>
+            </div>
+            <h1>🩺 Medical Lab Assistant Pro</h1>
+            <p>Advanced AI-Powered Analysis with LangChain & Python Backend</p>
+        </div>
+
+        <div class="api-config">
+            <div class="api-section">
+                <div class="api-input">
+                    <input type="password" id="apiKey" placeholder="Enter your Gemini API Key to activate Dr. AI" />
+                    <button onclick="initializeChatbot()">🚀 Initialize</button>
+                    <button class="reset-button" onclick="resetConversation()">🔄 Reset</button>
+                </div>
+                <div class="connection-status" id="connectionStatus"></div>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="bot-message">
+                <strong>👨‍⚕️ Dr. AI - Professional Medical Assistant</strong><br><br>
+                Welcome! I am your specialized medical AI assistant, powered by advanced LangChain technology and a comprehensive Python backend. I have thoroughly analyzed your complete laboratory results and I'm ready to provide professional medical consultation.<br><br>
+                
+                <div class="lab-summary">
+                    <h4>📊 Initial Lab Analysis Summary:</h4>
+                    • <strong>Total Tests Analyzed:</strong> 25+ comprehensive lab parameters<br>
+                    • <strong>Overall Assessment:</strong> Most values within normal limits<br>
+                    • <strong>Key Concerns:</strong> Vitamin D deficiency, elevated reproductive hormones<br>
+                    • <strong>Priority Actions:</strong> Vitamin D supplementation, hormonal evaluation
+                </div>
+                
+                <strong>🔬 Ready to discuss:</strong><br>
+                • Detailed interpretation of abnormal values<br>
+                • Clinical significance and health implications<br>
+                • Evidence-based treatment recommendations<br>
+                • Lifestyle modifications and preventive measures<br>
+                • Follow-up testing recommendations<br><br>
+                
+                Please initialize the system with your Gemini API key to begin our consultation.
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="quick-questions">
+                <div class="quick-question" onclick="askQuestion('What does my low vitamin D level mean and what should I do about it?')">🌞 Vitamin D Deficiency</div>
+                <div class="quick-question" onclick="askQuestion('Why are my FSH and LH levels elevated? Should I be concerned?')">🧬 Hormone Levels</div>
+                <div class="quick-question" onclick="askQuestion('Are there any concerning findings in my blood work?')">🩸 Blood Analysis</div>
+                <div class="quick-question" onclick="askQuestion('What supplements should I consider based on these results?')">💊 Supplement Advice</div>
+                <div class="quick-question" onclick="askQuestion('What follow-up tests do you recommend?')">🔍 Follow-up Tests</div>
+            </div>
+            <div class="input-group">
+                <textarea id="userInput" placeholder="Ask me anything about your lab results - I'm here to provide comprehensive medical analysis..." onkeypress="handleKeyPress(event)"></textarea>
+                <button class="send-button" id="sendButton" onclick="sendMessage()" disabled>➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        let isInitialized = false;
+        let isLoading = false;
+
+        // Status management
+        function updateStatus(status, text) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusDot.className = `status-dot ${status}`;
+            statusText.textContent = text;
+        }
+
+        function showConnectionStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.className = `connection-status ${isSuccess ? 'success' : 'error'}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize chatbot with API key
+        async function initializeChatbot() {
+            const apiKeyInput = document.getElementById('apiKey');
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!apiKey) {
+                showConnectionStatus('Please enter your Gemini API key', false);
+                return;
+            }
+
+            updateStatus('connecting', 'Connecting...');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/init`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ api_key: apiKey })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    isInitialized = true;
+                    updateStatus('ready', 'Connected');
+                    showConnectionStatus('✅ Successfully connected to Dr. AI backend!', true);
+                    document.getElementById('sendButton').disabled = false;
+                    apiKeyInput.value = '';
+                    
+                    // Add welcome message with lab summary
+                    addMessage(`
+                        <strong>🎯 System Initialized Successfully!</strong><br><br>
+                        I have loaded your complete laboratory dataset and I'm now ready to provide comprehensive medical analysis. Here's what I can help you with:<br><br>
+                        
+                        <div class="lab-summary">
+                            <h4>🔬 Lab Data Processing Complete:</h4>
+                            ${data.lab_summary ? data.lab_summary.split('\n').slice(0, 5).join('<br>') + '<br><em>...and 20+ more parameters</em>' : 'Complete lab analysis ready'}
+                        </div>
+                        
+                        <strong>Available Services:</strong><br>
+                        • 📋 Detailed lab interpretation<br>
+                        • ⚕️ Clinical recommendations<br>
+                        • 🎯 Personalized health advice<br>
+                        • 📊 Trend analysis<br>
+                        • 🔍 Risk assessment<br><br>
+                        
+                        What would you like to discuss about your results?
+                    `);
+                } else {
+                    throw new Error(data.error || 'Failed to initialize');
+                }
+
+            } catch (error) {
+                updateStatus('error', 'Error');
+                showConnectionStatus(`❌ Connection failed: ${error.message}`, false);
+                console.error('Initialization error:', error);
+            }
+        }
+
+        // Reset conversation
+        async function resetConversation() {
+            if (!isInitialized) {
+                showConnectionStatus('Please initialize the chatbot first', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    // Clear chat messages except the first welcome message
+                    const chatMessages = document.getElementById('chatMessages');
+                    const messages = chatMessages.querySelectorAll('.message');
+                    messages.forEach((message, index) => {
+                        if (index > 0) { // Keep the first welcome message
+                            message.remove();
+                        }
+                    });
+                    
+                    showConnectionStatus('🔄 Conversation reset successfully', true);
+                } else {
+                    throw new Error('Failed to reset conversation');
+                }
+            } catch (error) {
+                showConnectionStatus(`❌ Reset failed: ${error.message}`, false);
+            }
+        }
+
+        // Message handling
+        function addMessage(message, isUser = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'message user-message' : 'message bot-message';
+            messageDiv.innerHTML = message;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showLoading() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.id = 'loading';
+            loadingDiv.innerHTML = `
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            `;
+            messagesContainer.appendChild(loadingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        function askQuestion(question) {
+            if (!isInitialized) {
+                showConnectionStatus('Please initialize the chatbot first', false);
+                return;
+            }
+            document.getElementById('userInput').value = question;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Send message to backend
+        async function sendMessage() {
+            if (!isInitialized) {
+                showConnectionStatus('Please initialize the chatbot with your API key first', false);
+                return;
+            }
+
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            
+            if (!message || isLoading) return;
+
+            isLoading = true;
+            document.getElementById('sendButton').disabled = true;
+            
+            addMessage(message, true);
+            userInput.value = '';
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (response.ok) {
+                    // Format the response with better styling
+                    const formattedResponse = formatBotResponse(data.response);
+                    addMessage(formattedResponse);
+                } else {
+                    throw new Error(data.error || 'Failed to get response');
+                }
+
+            } catch (error) {
+                hideLoading();
+                addMessage(`
+                    <div class="error-message">
+                        ❌ <strong>Connection Error:</strong> ${error.message}<br>
+                        Please check if the Python backend is running on localhost:5000
+                    </div>
+                `);
+                console.error('Chat error:', error);
+            }
+
+            isLoading = false;
+            document.getElementById('sendButton').disabled = false;
+        }
+
+        // Format bot response for better display
+        function formatBotResponse(response) {
+            // Add medical icons and better formatting
+            let formatted = response
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+
+            // Add medical context indicators
+            if (formatted.toLowerCase().includes('vitamin d')) {
+                formatted = '🌞 ' + formatted;
+            } else if (formatted.toLowerCase().includes('hormone') || formatted.toLowerCase().includes('fsh') || formatted.toLowerCase().includes('lh')) {
+                formatted = '🧬 ' + formatted;
+            } else if (formatted.toLowerCase().includes('blood') || formatted.toLowerCase().includes('hematocrit') || formatted.toLowerCase().includes('hemoglobin')) {
+                formatted = '🩸 ' + formatted;
+            } else {
+                formatted = '⚕️ ' + formatted;
+            }
+
+            return formatted;
+        }
+
+        // Auto-resize textarea
+        document.getElementById('userInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Initialize status
+        updateStatus('disconnected', 'Disconnected');
+
+        // Check backend health on load
+        async function checkBackendHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Backend health check:', data);
+                } else {
+                    console.warn('Backend health check failed');
+                }
+            } catch (error) {
+                console.warn('Backend not accessible:', error.message);
+                showConnectionStatus('⚠️ Backend server not detected. Please start the Python server first.', false);
+            }
+        }
+
+        // Check backend on page load
+        window.addEventListener('load', checkBackendHealth);
+    </script>
+</body>
+</html>
