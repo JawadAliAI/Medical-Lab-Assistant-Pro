@@ -24,7 +24,7 @@ This application serves as a virtual medical doctor specializing in laboratory m
 ## 🖼️ Application Screenshots
 
 ### Image 1: Main Dashboard
-![Medical Chatbot Dashboard](image1.png)
+![Medical Chatbot Dashboard](s.png)
 *The main interface showing the professional medical consultation dashboard with lab results overview*
 
 ### Image 2: Chat Interface
